@@ -93,3 +93,48 @@ form button:hover {
     border-radius: 4px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+article {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+#editModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    z-index: 1000;
+}
+
+#editModal form {
+    display: flex;
+    flex-direction: column;
+}
+
+#editModal label {
+    margin-top: 10px;
+}
+
+#editModal input, #editModal textarea {
+    padding: 5px;
+    margin-top: 5px;
+}
+
+#editModal button {
+    margin-top: 10px;
+}
+
+#editModal #cancelEdit {
+    background-color: #f44336;
+    color: #fff;
+}
