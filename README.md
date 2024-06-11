@@ -12,7 +12,7 @@ Ce projet est une démonstration de la manière d'intégrer une vidéo Vimeo dan
           title="expat mini projet">
   </iframe>
 </div>
-<script src="https://player.vimeo.com/api/player.js"></script>
+
 
 ## Images de démonstration
 
