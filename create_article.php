@@ -1,16 +1,9 @@
-<?php
-include 'db.php';
-
-$sql = "SELECT * FROM category";
-$result = $conn->query($sql);
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Create Article</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <nav>
@@ -20,64 +13,54 @@ $result = $conn->query($sql);
         </ul>
     </nav>
     <div class="container">
-        <h1>Create an Article</h1>
-        <form id="articleForm" method="post">
+        <h1>Create Article</h1>
+        <form action="create_article.php" method="post">
             <label for="title">Title:</label>
-            <input type="text" id="title" name="title" required><br><br>
+            <input type="text" id="title" name="title" required>
+            
             <label for="content">Content:</label>
-            <textarea id="content" name="content" required></textarea><br><br>
+            <textarea id="content" name="content" required></textarea>
+            
             <label for="category">Category:</label>
             <select id="category" name="category">
-                <option value="">None</option>
+                <option value="">Select Category</option>
                 <?php
+                include 'db.php';
+                $sql = "SELECT * FROM category";
+                $result = $conn->query($sql);
                 if ($result && $result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
                         echo "<option value='" . $row['id'] . "'>" . htmlspecialchars($row['name']) . "</option>";
                     }
-                } else {
-                    echo "<option value=''>No categories found</option>";
                 }
                 ?>
-            </select><br><br>
-            <button type="submit">Submit</button>
+            </select>
+            
+            <button type="submit">Save</button>
         </form>
-        <div id="message"></div>
-    </div>
+        <?php
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $title = $_POST['title'];
+            $content = $_POST['content'];
+            $category_id = $_POST['category'];
 
-    <script>
-        $(document).ready(function() {
-            $('#articleForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var title = $('#title').val();
-                var content = $('#content').val();
-                var category = $('#category').val();
-
-                if (title === "" || content === "") {
-                    $('#message').text("All fields except category are required.");
-                    return;
+            $stmt = $conn->prepare("INSERT INTO article (title, content) VALUES (?, ?)");
+            $stmt->bind_param("ss", $title, $content);
+            if ($stmt->execute()) {
+                $article_id = $stmt->insert_id;
+                if (!empty($category_id)) {
+                    $stmt = $conn->prepare("INSERT INTO article_has_category (article_id, category_id) VALUES (?, ?)");
+                    $stmt->bind_param("ii", $article_id, $category_id);
+                    $stmt->execute();
                 }
-
-                $.ajax({
-                    url: 'submit_article.php',
-                    method: 'POST',
-                    data: {
-                        title: title,
-                        content: content,
-                        category: category
-                    },
-                    success: function(response) {
-                        var res = JSON.parse(response);
-                        if (res.success) {
-                            window.location.href = res.redirect;
-                        } else {
-                            $('#message').text(res.message);
-                        }
-                    }
-                });
-            });
-        });
-    </script>
+                echo "<p>Article created successfully!</p>";
+            } else {
+                echo "<p>Error creating article.</p>";
+            }
+            $stmt->close();
+        }
+        $conn->close();
+        ?>
+    </div>
 </body>
 </html>
-<?php $conn->close(); ?>
