@@ -1,14 +1,44 @@
 <?php
-$servername = "localhost"; // Utilisez "127.0.0.1" ou "::1" si "localhost" ne fonctionne pas
-$username = "root"; // Votre nom d'utilisateur MySQL
-$password = ""; // Votre mot de passe MySQL, laissez vide si vous n'avez pas de mot de passe
-$dbname = "expat"; // Le nom de votre base de données
+class Database {
+    private static $instance = null;
+    private $conn;
 
-// Créer une connexion
-$conn = new mysqli($servername, $username, $password, $dbname);
+    private $servername = "localhost";
+    private $username = "root";
+    private $password = "";
+    private $dbname = "expat";
 
-// Vérifier la connexion
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    // Constructeur privé pour empêcher l'instanciation directe
+    private function __construct() {
+        $this->conn = new mysqli($this->servername, $this->username, $this->password, $this->dbname);
+        if ($this->conn->connect_error) {
+            die("Connection failed: " . $this->conn->connect_error);
+        }
+    }
+
+    // Méthode statique pour obtenir l'instance unique de la connexion à la base de données
+    public static function getInstance() {
+        if (!self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    // Méthode pour récupérer la connexion à la base de données
+    public function getConnection() {
+        return $this->conn;
+    }
+
+    // Empêcher le clonage de l'objet
+    private function __clone() {}
+
+    // Empêcher la désérialisation de l'objet
+    private function __wakeup() {}
 }
+
+
+$db = Database::getInstance();
+$conn = $db->getConnection();
+
+
 ?>
