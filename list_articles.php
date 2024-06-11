@@ -2,104 +2,6 @@
 declare(strict_types=1);
 session_start();
 include 'db.php';
-
-class Database {
-    private $conn;
-
-    public function __construct($dbConnection) {
-        $this->conn = $dbConnection;
-    }
-
-    public function prepare($sql) {
-        return $this->conn->prepare($sql);
-    }
-
-    public function query($sql) {
-        return $this->conn->query($sql);
-    }
-
-    public function close() {
-        $this->conn->close();
-    }
-}
-
-class CategoryRepository {
-    private $db;
-
-    public function __construct(Database $db) {
-        $this->db = $db;
-    }
-
-    public function getAll(): array {
-        $categories = [];
-        $result = $this->db->query("SELECT * FROM category");
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $categories[] = ['id' => $row['id'], 'name' => htmlspecialchars($row['name'])];
-            }
-        }
-        return $categories;
-    }
-}
-
-class ArticleRepository {
-    private $db;
-
-    public function __construct(Database $db) {
-        $this->db = $db;
-    }
-
-    public function getArticles(int $category_id = 0): array {
-        $sql = "SELECT article.*, category.name AS category_name 
-                FROM article 
-                LEFT JOIN article_has_category ON article.id = article_has_category.article_id 
-                LEFT JOIN category ON article_has_category.category_id = category.id";
-        $params = [];
-
-        if ($category_id === -1) {
-            $sql .= " WHERE article_has_category.category_id IS NULL";
-        } elseif ($category_id > 0) {
-            $sql .= " WHERE article_has_category.category_id = ?";
-            $params[] = $category_id;
-        }
-
-        $stmt = $this->db->prepare($sql);
-
-        if (!empty($params)) {
-            $stmt->bind_param("i", ...$params);
-        }
-
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $articles = [];
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $articles[] = [
-                    'id' => $row['id'],
-                    'title' => htmlspecialchars($row['title']),
-                    'content' => htmlspecialchars($row['content']),
-                    'category_name' => htmlspecialchars($row['category_name'] ?? 'Sans catégorie'),
-                    'created_at' => htmlspecialchars($row['created_at']),
-                    'updated_at' => htmlspecialchars($row['updated_at'])
-                ];
-            }
-        }
-
-        $stmt->close();
-        return $articles;
-    }
-}
-
-$db = new Database($conn);
-$categoryRepository = new CategoryRepository($db);
-$articleRepository = new ArticleRepository($db);
-
-$categories = $categoryRepository->getAll();
-$category_id = isset($_GET['category_id']) ? ($_GET['category_id'] === 'uncategorized' ? -1 : intval($_GET['category_id'])) : 0;
-$articles = $articleRepository->getArticles($category_id);
-
-$db->close();
 ?>
 
 <!DOCTYPE html>
@@ -125,33 +27,57 @@ $db->close();
             <select id="filterCategory" name="filterCategory">
                 <option value="">Toutes</option>
                 <option value="uncategorized">Sans catégorie</option>
-                <?php foreach ($categories as $category): ?>
-                    <option value="<?php echo $category['id']; ?>"><?php echo $category['name']; ?></option>
-                <?php endforeach; ?>
+                <?php
+                $sql = "SELECT * FROM category";
+                $result = $conn->query($sql);
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<option value='" . $row['id'] . "'>" . htmlspecialchars($row['name']) . "</option>";
+                    }
+                }
+                ?>
             </select>
             <button type="submit">Filtrer</button>
         </form>
         <!-- Liste des articles -->
         <div id="articlesList">
-        <?php if (!empty($articles)): ?>
-            <?php foreach ($articles as $article): ?>
-                <div class='article' data-id='<?php echo $article['id']; ?>'>
-                    <h2><?php echo $article['title']; ?></h2>
-                    <p><?php echo $article['content']; ?></p>
-                    <p><strong>Catégorie:</strong> <?php echo $article['category_name']; ?></p>
-                    <p><strong>Date de création:</strong> <?php echo $article['created_at']; ?></p>
-                    <p><strong>Dernière modification:</strong> <?php echo $article['updated_at']; ?></p>
-                    <button class='edit-article' data-id='<?php echo $article['id']; ?>'>Modifier</button>
-                    <button class='delete-article' data-id='<?php echo $article['id']; ?>'>Supprimer</button>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>Aucun article trouvé.</p>
-        <?php endif; ?>
+        <?php
+        $category_id = isset($_GET['category_id']) ? $_GET['category_id'] : '';
+        $sql = "SELECT article.*, category.name AS category_name 
+                FROM article 
+                LEFT JOIN article_has_category ON article.id = article_has_category.article_id 
+                LEFT JOIN category ON article_has_category.category_id = category.id";
+
+        if ($category_id === 'uncategorized') {
+            $sql .= " WHERE article_has_category.category_id IS NULL";
+        } elseif ($category_id !== '') {
+            $category_id = intval($category_id);
+            $sql .= " WHERE article_has_category.category_id = $category_id";
+        }
+
+        $result = $conn->query($sql);
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $category_name = $row['category_name'] ?? 'Sans catégorie';
+                echo "<div class='article' data-id='" . $row['id'] . "'>";
+                echo "<h2>" . htmlspecialchars($row['title']) . "</h2>";
+                echo "<p>" . htmlspecialchars($row['content']) . "</p>";
+                echo "<p><strong>Catégorie:</strong> " . htmlspecialchars($category_name) . "</p>";
+                echo "<p><strong>Date de création:</strong> " . htmlspecialchars($row['created_at']) . "</p>";
+                echo "<p><strong>Dernière modification:</strong> " . htmlspecialchars($row['updated_at']) . "</p>";
+                echo "<button class='edit-article' data-id='" . $row['id'] . "'>Modifier</button>";
+                echo "<button class='delete-article' data-id='" . $row['id'] . "'>Supprimer</button>";
+                echo "</div>";
+            }
+        } else {
+            echo "<p>Aucun article trouvé.</p>";
+        }
+        $conn->close();
+        ?>
         </div>
     </div>
     <!-- Modal pour modifier l'article -->
-    <div id="editModal" style="display:none;">
+    <div id="editModal">
         <h2>Modifier l'article</h2>
         <form id="editArticleForm">
             <input type="hidden" id="editArticleId" name="id">
@@ -165,12 +91,14 @@ $db->close();
     </div>
     <script>
         $(document).ready(function() {
+            // Filtrer les articles par catégorie
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
                 var category_id = $('#filterCategory').val();
                 window.location.href = 'list_articles.php?category_id=' + category_id;
             });
 
+            // Ouvrir le modal pour éditer un article
             $(document).on('click', '.edit-article', function() {
                 var articleId = $(this).data('id');
                 $.ajax({
@@ -202,6 +130,7 @@ $db->close();
                 });
             });
 
+            // Soumettre le formulaire d'édition
             $('#editArticleForm').on('submit', function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -230,10 +159,12 @@ $db->close();
                 });
             });
 
+            // Annuler l'édition
             $('#cancelEdit').on('click', function() {
                 $('#editModal').hide();
             });
 
+            // Supprimer un article
             $(document).on('click', '.delete-article', function() {
                 var articleId = $(this).data('id');
                 var confirmation = confirm("Êtes-vous sûr de vouloir supprimer cet article ?");
