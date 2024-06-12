@@ -1,20 +1,29 @@
 <?php
+declare(strict_types=1);
+header('Content-Type: application/json');
 include 'db.php';
 
-$article_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$response = [];
 
-if ($article_id > 0) {
-    $sql = "SELECT * FROM article WHERE id = $article_id";
-    $result = $conn->query($sql);
+if (isset($_GET['id'])) {
+    $article_id = (int) $_GET['id'];
 
-    if ($result && $result->num_rows > 0) {
-        echo json_encode($result->fetch_assoc());
+    $stmt = $conn->prepare("SELECT id, title, content, created_at, updated_at FROM article WHERE id = ?");
+    $stmt->bind_param("i", $article_id);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $response = $result->fetch_assoc();
+        } else {
+            $response['error'] = "Article not found.";
+        }
     } else {
-        echo json_encode(["error" => "Article non trouvé."]);
+        $response['error'] = "Error fetching article.";
     }
+    $stmt->close();
 } else {
-    echo json_encode(["error" => "ID d'article invalide."]);
+    $response['error'] = "Invalid request.";
 }
 
+echo json_encode($response);
 $conn->close();
-?>
