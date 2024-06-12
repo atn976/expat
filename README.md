@@ -1,17 +1,10 @@
 ## Projet Expat Mini
 
-Ce projet est une démonstration de la manière d'intégrer une vidéo Vimeo dans un fichier README.
+Dans la version V3 de l'application, une requête SQL a été ajoutée pour créer le champ de date dans la base de données.
 
 ## Vidéo de démonstration
 
-<div style="padding:52.5% 0 0 0;position:relative;">
-  <iframe src="https://player.vimeo.com/video/956780396?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" 
-          frameborder="0" 
-          allow="autoplay; fullscreen; picture-in-picture; clipboard-write" 
-          style="position:absolute;top:0;left:0;width:100%;height:100%;" 
-          title="expat mini projet">
-  </iframe>
-</div>
+<div style="padding:52.4% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/956828508?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="AppV3"></iframe></div>
 
 
 ## Images de démonstration
